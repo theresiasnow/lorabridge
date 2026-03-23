@@ -501,6 +501,7 @@ class LorabridgeApp(App[None]):
         self._beacon_enabled = True
         self._last_pos: Position | None = None
         self._last_node: NodeInfo | None = None
+        self._local_node_id: str = ""  # set by cli._drain after connect
         # node_id -> NodeInfo, insertion order = heard order
         self._mesh_nodes: dict[str, NodeInfo] = {}
         # Set from cli.py after construction: (source_type, device) -> error_str | None
@@ -520,7 +521,7 @@ class LorabridgeApp(App[None]):
         with Horizontal(id="cmd-bar"):
             yield Label("❯ ", id="cmd-prompt")
             yield Input(
-                placeholder="ble on/off  •  serial on/off  •  msg <NODE_ID> <text>  •  beacon on/off  •  pos",
+                placeholder="ble on/off  •  serial on/off  •  beacon on/off  •  msg <NODE> <text>",
                 id="cmd-input",
                 suggester=CommandSuggester(),
             )
@@ -641,7 +642,8 @@ class LorabridgeApp(App[None]):
     def _handle_nodeinfo(self, n: NodeInfo) -> None:
         self._last_node = n
         self._mesh_nodes[n.node_id] = n  # upsert, preserves insertion order on update
-        self.query_one("#node-panel", NodePanel).render_data(n)
+        if not self._local_node_id or n.node_id == self._local_node_id:
+            self.query_one("#node-panel", NodePanel).render_data(n)
         self.query_one("#nodes-panel", NodesPanel).render_data(self._mesh_nodes)
         ts = datetime.now(UTC).strftime("%H:%M:%S")
         self.query_one("#event-log", RichLog).write(
@@ -657,8 +659,14 @@ class LorabridgeApp(App[None]):
             f"[dim]{ts}[/]  [magenta]TXT[/]  {m.from_id}: {m.text[:60]}"
         )
 
+    def _update_subtitle(self) -> None:
+        _mode_map = {"lora": "MQTT", "serial": "USB", "ble": "BLE", "none": "—"}
+        _mode = _mode_map.get(self._cfg.source.type, self._cfg.source.type.upper())
+        self.sub_title = f"{self._cfg.aprs.callsign}  [{_mode}]"
+
     def _set_src_connected(self, connected: bool) -> None:
         self._src_connected = connected
+        self._update_subtitle()
         self._refresh_sinks()
 
     def _inc_beacon(self) -> None:

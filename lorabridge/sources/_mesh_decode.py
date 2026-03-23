@@ -22,6 +22,7 @@ def fire_initial_nodes(
     on_nodeinfo: Callable | None = None,
     on_telemetry: Callable | None = None,
     source_tag: str = "",
+    on_my_node_id: Callable[[str], None] | None = None,
 ) -> None:
     """Emit callbacks for all nodes in the interface node database.
 
@@ -29,6 +30,13 @@ def fire_initial_nodes(
     running (i.e. after tui_app.run() has started), otherwise call_from_thread
     will silently drop the updates.
     """
+    if on_my_node_id:
+        try:
+            my_num = getattr(getattr(iface, "myInfo", None), "myNodeNum", None)
+            if my_num:
+                on_my_node_id(f"!{my_num:08x}")
+        except Exception:
+            pass
     nodes: dict = getattr(iface, "nodes", None) or {}
     logger.info(f"[{source_tag}] fire_initial_nodes: {len(nodes)} node(s) in DB")
     for node_id, node in nodes.items():

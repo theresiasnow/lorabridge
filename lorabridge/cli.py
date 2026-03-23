@@ -198,6 +198,7 @@ def main(
                     on_nodeinfo=on_nodeinfo,
                     on_telemetry=on_telemetry,
                     source_tag=cfg.source.type,
+                    on_my_node_id=lambda nid: setattr(tui_app, "_local_node_id", nid),
                 )
 
         def on_connect(source_type: str, device: str) -> str | None:
