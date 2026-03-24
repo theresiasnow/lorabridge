@@ -433,6 +433,7 @@ class CommandSuggester(Suggester):
         "beacon": ["on", "off"],
         "ble": ["on", "off"],
         "serial": ["on", "off"],
+        "wifi": ["<HOST>", "off"],
         "pos": ["send <NODE_ID>"],
         "info": ["<NODE_ID>"],
         "trace": ["<NODE_ID>"],
@@ -772,6 +773,7 @@ class MeshtopApp(App[None]):
             "beacon": self._cmd_beacon,
             "ble": self._cmd_ble,
             "serial": self._cmd_serial,
+            "wifi": self._cmd_wifi,
             "pos": self._cmd_pos,
             "info": self._cmd_info,
             "trace": self._cmd_trace,
@@ -1000,6 +1002,39 @@ class MeshtopApp(App[None]):
 
         self.push_screen(SerialPickerScreen(), _on_pick)
 
+    def _cmd_wifi(self, args: list[str]) -> None:
+        action = args[0] if args else ""
+        if action.lower() == "off":
+            if self._on_disconnect is None:
+                self.notify("Not connected", severity="warning")
+                return
+            def _do_off() -> None:
+                self._on_disconnect()
+                self.call_from_thread(lambda: self.notify("WiFi/TCP disconnected", title="WiFi"))
+            threading.Thread(target=_do_off, daemon=True).start()
+            return
+        host = action if action else ""
+        if not host:
+            self.notify("Usage: wifi <HOST|IP>  (e.g. wifi 192.168.1.100)", severity="warning")
+            return
+        if self._on_connect is None:
+            self.notify(f"TCP host: {host}", title="WiFi")
+            return
+        self.notify(f"Connecting to {host}…", title="WiFi", timeout=30)
+
+        def _do() -> None:
+            err = self._on_connect("tcp", host)
+            if err:
+                self.call_from_thread(
+                    lambda: self.notify(err, title="WiFi connect failed", severity="error")
+                )
+            else:
+                self.call_from_thread(
+                    lambda: self.notify(f"Connected to {host}", title="WiFi")
+                )
+
+        threading.Thread(target=_do, daemon=True).start()
+
     def _cmd_log(self) -> None:
         self.push_screen(LogScreen())
 
@@ -1009,6 +1044,8 @@ class MeshtopApp(App[None]):
             "ble off  —  disconnect Bluetooth",
             "serial on  —  pick and connect via USB serial",
             "serial off  —  disconnect serial",
+            "wifi <HOST>  —  connect via WiFi/TCP (e.g. wifi 192.168.1.100)",
+            "wifi off  —  disconnect WiFi/TCP",
             "msg <NODE_ID|^all> <text>  —  send Meshtastic message",
             "send  (alias for msg)",
             "beacon on|off  —  toggle APRS beaconing",

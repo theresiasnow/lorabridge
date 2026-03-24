@@ -27,12 +27,18 @@ class BleSourceConfig(BaseModel):
     device: str = ""   # device name or BLE address; empty = auto-discover first found
 
 
+class TcpSourceConfig(BaseModel):
+    host: str = ""     # IP or hostname of the Meshtastic device
+    port: int = 4403   # default Meshtastic TCP port
+
+
 class SourceConfig(BaseModel):
-    type: Literal["serial", "lora", "ble", "none"] = "none"
+    type: Literal["serial", "lora", "ble", "tcp", "none"] = "none"
     port: str = "COM3"
     baud: int = 9600
     lora: LoraSourceConfig = LoraSourceConfig()
     ble: BleSourceConfig = BleSourceConfig()
+    tcp: TcpSourceConfig = TcpSourceConfig()
 
 
 class NmeaServerConfig(BaseModel):

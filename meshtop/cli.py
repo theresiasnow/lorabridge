@@ -79,6 +79,17 @@ def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_statu
             on_status=on_status,
             on_traceroute=on_traceroute,
         )
+    if src_type == "tcp":
+        from meshtop.sources.tcp import TcpSource
+        return TcpSource(
+            cfg.source,
+            on_position=on_position,
+            on_telemetry=on_telemetry,
+            on_nodeinfo=on_nodeinfo,
+            on_text=on_text,
+            on_status=on_status,
+            on_traceroute=on_traceroute,
+        )
     raise ValueError(f"Unknown source type: {src_type}")
 
 
@@ -216,6 +227,8 @@ def main(
                 cfg.source.ble.device = device
             elif source_type == "serial":
                 cfg.source.port = device
+            elif source_type == "tcp":
+                cfg.source.tcp.host = device
             new_src = _build_source(
                 cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status,
                 on_traceroute=on_traceroute,
