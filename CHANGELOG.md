@@ -1,3 +1,17 @@
+## v0.3.0 (2026-03-24)
+
+### Feat
+
+- **tui**: add channel encryption UI, msg history, and ! shortcut
+- add WiFi/TCP source for devices with WiFi enabled
+- **tui**: exchange positions and user info with specific nodes
+- **tui**: add pos send, traceroute, and live-iface msg commands
+
+### Fix
+
+- **tui**: replace tooltips with visible cmd-hint bar
+- **tui**: rename LorabridgeApp to MeshtopApp; add MQTT observer, log viewer, BLE watchdog
+
 ## v0.2.0 (2026-03-24)
 
 ### Feat
