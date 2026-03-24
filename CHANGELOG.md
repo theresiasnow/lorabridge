@@ -1,3 +1,9 @@
+## v0.4.0 (2026-03-24)
+
+### Feat
+
+- **tui**: improve messaging UX and channel receive via MQTT observer
+
 ## v0.3.0 (2026-03-24)
 
 ### Feat
