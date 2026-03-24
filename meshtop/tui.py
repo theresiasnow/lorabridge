@@ -18,15 +18,15 @@ from textual.screen import ModalScreen
 from textual.suggester import Suggester
 from textual.widgets import Header, Input, Label, ListItem, ListView, RichLog, Static
 
-from lorabridge.position import Position
-from lorabridge.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage
+from meshtop.position import Position
+from meshtop.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage
 
 if TYPE_CHECKING:
-    from lorabridge.config import Config
-    from lorabridge.sinks.aprs import AprsSink
-    from lorabridge.sinks.gpsd import GpsdSink
-    from lorabridge.sinks.nmea_server import NmeaServer
-    from lorabridge.sinks.rigtop import RigtopSink
+    from meshtop.config import Config
+    from meshtop.sinks.aprs import AprsSink
+    from meshtop.sinks.gpsd import GpsdSink
+    from meshtop.sinks.nmea_server import NmeaServer
+    from meshtop.sinks.rigtop import RigtopSink
 
 
 # ── Panel widgets ─────────────────────────────────────────────────────────────
@@ -527,7 +527,7 @@ class LorabridgeApp(App[None]):
             )
 
     def on_mount(self) -> None:
-        self.title = "lorabridge"
+        self.title = "meshtop"
         _mode_map = {"lora": "MQTT", "serial": "USB", "ble": "BLE"}
         _mode = _mode_map.get(self._cfg.source.type, self._cfg.source.type.upper())
         self.sub_title = f"{self._cfg.aprs.callsign}  [{_mode}]"
@@ -601,22 +601,22 @@ class LorabridgeApp(App[None]):
 
     # ── Message handlers (run on the event loop) ──────────────────────────────
 
-    def on_lorabridge_app_position_received(self, msg: PositionReceived) -> None:
+    def on_meshtop_app_position_received(self, msg: PositionReceived) -> None:
         self._handle_position(msg.pos)
 
-    def on_lorabridge_app_telemetry_received(self, msg: TelemetryReceived) -> None:
+    def on_meshtop_app_telemetry_received(self, msg: TelemetryReceived) -> None:
         self._handle_telemetry(msg.m)
 
-    def on_lorabridge_app_node_info_received(self, msg: NodeInfoReceived) -> None:
+    def on_meshtop_app_node_info_received(self, msg: NodeInfoReceived) -> None:
         self._handle_nodeinfo(msg.n)
 
-    def on_lorabridge_app_text_received(self, msg: TextReceived) -> None:
+    def on_meshtop_app_text_received(self, msg: TextReceived) -> None:
         self._handle_text(msg.m)
 
-    def on_lorabridge_app_source_status(self, msg: SourceStatus) -> None:
+    def on_meshtop_app_source_status(self, msg: SourceStatus) -> None:
         self._set_src_connected(msg.connected)
 
-    def on_lorabridge_app_beacon_sent(self, msg: BeaconSent) -> None:
+    def on_meshtop_app_beacon_sent(self, msg: BeaconSent) -> None:
         self._inc_beacon()
 
     # ── Main-thread handlers ──────────────────────────────────────────────────
@@ -706,7 +706,7 @@ class LorabridgeApp(App[None]):
 
         def _send() -> None:
             try:
-                from lorabridge.mesh_sender import send_text
+                from meshtop.mesh_sender import send_text
 
                 result = send_text(self._cfg.source.lora, self._serial_port, dest, text)
                 ts = datetime.now(UTC).strftime("%H:%M:%S")

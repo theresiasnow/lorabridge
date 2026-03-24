@@ -17,13 +17,13 @@ from datetime import UTC, datetime
 
 from loguru import logger
 
-from lorabridge.config import GpsdConfig
-from lorabridge.position import Position
+from meshtop.config import GpsdConfig
+from meshtop.position import Position
 
 _VERSION = {
     "class": "VERSION",
     "release": "3.25",
-    "rev": "lorabridge",
+    "rev": "meshtop",
     "proto_major": 3,
     "proto_minor": 14,
 }
@@ -34,7 +34,7 @@ _DEVICES = {
         {
             "class": "DEVICE",
             "path": "/dev/meshtastic",
-            "driver": "lorabridge",
+            "driver": "meshtop",
             "activated": "",
         }
     ],

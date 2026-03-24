@@ -47,7 +47,7 @@ class AprsConfig(BaseModel):
     server: str = "rotate.aprs2.net"
     port: int = 14580
     interval: int = 60
-    comment: str = "lorabridge"
+    comment: str = "meshtop"
 
 
 class GpsdConfig(BaseModel):

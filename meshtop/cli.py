@@ -8,13 +8,13 @@ import typer
 from loguru import logger
 from rich.console import Console
 
-from lorabridge.config import load_config
-from lorabridge.position import Position
-from lorabridge.sinks.aprs import AprsSink
-from lorabridge.sinks.gpsd import GpsdSink
-from lorabridge.sinks.nmea_server import NmeaServer
-from lorabridge.sinks.rigtop import RigtopSink
-from lorabridge.sources.meshtastic import DeviceMetrics, MeshtasticSource, NodeInfo, TextMessage
+from meshtop.config import load_config
+from meshtop.position import Position
+from meshtop.sinks.aprs import AprsSink
+from meshtop.sinks.gpsd import GpsdSink
+from meshtop.sinks.nmea_server import NmeaServer
+from meshtop.sinks.rigtop import RigtopSink
+from meshtop.sources.meshtastic import DeviceMetrics, MeshtasticSource, NodeInfo, TextMessage
 
 app = typer.Typer(help="GPS bridge -- Wio Tracker to pi-star / APRS / gpsd / rigtop")
 console = Console()
@@ -57,7 +57,7 @@ def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_statu
             on_mqtt_status=on_status,
         )
     if src_type == "serial":
-        from lorabridge.sources.serial import SerialSource
+        from meshtop.sources.serial import SerialSource
         return SerialSource(
             cfg.source,
             on_position=on_position,
@@ -67,7 +67,7 @@ def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_statu
             on_status=on_status,
         )
     if src_type == "ble":
-        from lorabridge.sources.ble import BleSource
+        from meshtop.sources.ble import BleSource
         return BleSource(
             cfg.source,
             on_position=on_position,
@@ -80,7 +80,7 @@ def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_statu
 
 
 _OPT_CONFIG = typer.Option(
-    Path("lorabridge.toml"), "--config", "-c", metavar="FILE", help="Config file"
+    Path("meshtop.toml"), "--config", "-c", metavar="FILE", help="Config file"
 )
 _OPT_SOURCE = typer.Option(None, "--source", "-s", help="Source type (serial|ble|lora)")
 _OPT_PORT = typer.Option(None, "--port", "-p", help="Serial port (e.g. COM3)")
@@ -105,7 +105,7 @@ def main(
     if tui:
         logger.remove()
         log_level = "DEBUG" if debug else "INFO"
-        logger.add("lorabridge.log", level=log_level, rotation="1 MB", retention=3)
+        logger.add("meshtop.log", level=log_level, rotation="1 MB", retention=3)
     elif debug:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
@@ -155,7 +155,7 @@ def main(
             rigtop_sink.send(pos)
 
     if tui:
-        from lorabridge.tui import LorabridgeApp
+        from meshtop.tui import LorabridgeApp
 
         tui_app = LorabridgeApp(
             cfg,
@@ -190,7 +190,7 @@ def main(
             """Fire nodeinfo/position/telemetry from the interface node DB.
             Must run from a background thread while the TUI event loop is live.
             """
-            from lorabridge.sources._mesh_decode import fire_initial_nodes
+            from meshtop.sources._mesh_decode import fire_initial_nodes
             if hasattr(src, "_iface") and src._iface:
                 fire_initial_nodes(
                     src._iface,
@@ -291,7 +291,7 @@ def main(
             os._exit(0)
 
     else:
-        console.print(f"[bold green]lorabridge[/] starting — source=[cyan]{cfg.source.type}[/]")
+        console.print(f"[bold green]meshtop[/] starting — source=[cyan]{cfg.source.type}[/]")
 
         def on_position(pos: Position) -> None:  # type: ignore[misc]
             console.print(

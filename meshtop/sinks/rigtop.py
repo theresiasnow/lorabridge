@@ -4,9 +4,9 @@ Identical wire format to nmea_server but on a separate port so rigtop
 and pi-star can both connect simultaneously.
 """
 
-from lorabridge.config import RigtopConfig
-from lorabridge.position import Position
-from lorabridge.sinks.nmea_server import NmeaServer, NmeaServerConfig
+from meshtop.config import RigtopConfig
+from meshtop.position import Position
+from meshtop.sinks.nmea_server import NmeaServer, NmeaServerConfig
 
 
 class RigtopSink:

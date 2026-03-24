@@ -6,8 +6,8 @@ from collections.abc import Callable
 
 from loguru import logger
 
-from lorabridge.config import SourceConfig
-from lorabridge.sources._mesh_decode import decode_packet
+from meshtop.config import SourceConfig
+from meshtop.sources._mesh_decode import decode_packet
 
 
 class SerialSource:

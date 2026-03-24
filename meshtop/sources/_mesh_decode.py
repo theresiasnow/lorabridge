@@ -12,8 +12,8 @@ from typing import Any
 
 from loguru import logger
 
-from lorabridge.position import Position
-from lorabridge.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage
+from meshtop.position import Position
+from meshtop.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage
 
 
 def fire_initial_nodes(

@@ -1,5 +1,5 @@
 [project]
-name = "lorabridge"
+name = "meshtop"
 version = "0.1.0"
 description = "GPS bridge for Meshtastic devices — forwards to pi-star, APRS-IS, gpsd, rigtop"
 readme = "README.md"
@@ -31,7 +31,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-lorabridge = "lorabridge.cli:app"
+meshtop = "meshtop.cli:app"
 
 [tool.ruff]
 target-version = "py312"

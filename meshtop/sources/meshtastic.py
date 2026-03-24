@@ -15,8 +15,8 @@ from meshtastic.protobuf.mesh_pb2 import Position as MeshPosition
 from meshtastic.protobuf.mqtt_pb2 import ServiceEnvelope
 from meshtastic.protobuf.telemetry_pb2 import Telemetry
 
-from lorabridge.config import LoraSourceConfig
-from lorabridge.position import Position
+from meshtop.config import LoraSourceConfig
+from meshtop.position import Position
 
 
 @dataclass

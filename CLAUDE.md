@@ -1,4 +1,4 @@
-# lorabridge — Claude Code instructions
+# meshtop — Claude Code instructions
 
 ## Python / tooling
 
@@ -16,7 +16,7 @@ Never call `.venv/Scripts/python.exe` directly.
 ## Project layout
 
 ```
-lorabridge/
+meshtop/
   __init__.py
   __main__.py
   cli.py           # entry point, argument parsing, startup/shutdown, rich output
@@ -63,11 +63,11 @@ Valid types: `build`, `bump`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `ref
 ## Running
 
 ```
-uv run lorabridge --help
-uv run lorabridge --source serial --port COM3
-uv run lorabridge --source lora --config lorabridge.toml
+uv run meshtop --help
+uv run meshtop --source serial --port COM3
+uv run meshtop --source lora --config meshtop.toml
 uv run pytest tests/
-uv run ruff check lorabridge/
+uv run ruff check meshtop/
 ```
 
 ## Branch workflow

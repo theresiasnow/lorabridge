@@ -9,8 +9,8 @@ from datetime import UTC, datetime
 
 from loguru import logger
 
-from lorabridge.config import NmeaServerConfig
-from lorabridge.position import Position
+from meshtop.config import NmeaServerConfig
+from meshtop.position import Position
 
 
 def _nmea_checksum(sentence: str) -> str:

@@ -4,8 +4,8 @@ import time
 
 from loguru import logger
 
-from lorabridge.config import AprsConfig
-from lorabridge.position import Position
+from meshtop.config import AprsConfig
+from meshtop.position import Position
 
 
 def _format_lat(lat: float) -> str:
@@ -106,7 +106,7 @@ class AprsSink:
             sock.settimeout(30)
             banner = sock.recv(512).decode("ascii", errors="replace").strip()
             logger.info(f"APRS-IS banner: {banner}")
-            login = f"user {self._cfg.callsign} pass {self._cfg.passcode} vers lorabridge 1.0\r\n"
+            login = f"user {self._cfg.callsign} pass {self._cfg.passcode} vers meshtop 1.0\r\n"
             sock.sendall(login.encode("ascii"))
             resp = sock.recv(512).decode("ascii", errors="replace").strip()
             logger.info(f"APRS-IS login: {resp}")
