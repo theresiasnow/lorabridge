@@ -23,6 +23,7 @@ class BleSource:
         on_nodeinfo: Callable | None = None,
         on_text: Callable | None = None,
         on_status: Callable[[bool], None] | None = None,
+        on_traceroute: Callable | None = None,
     ) -> None:
         self._cfg = cfg
         self._on_position = on_position
@@ -30,6 +31,7 @@ class BleSource:
         self._on_nodeinfo = on_nodeinfo
         self._on_text = on_text
         self._on_status = on_status
+        self._on_traceroute = on_traceroute
         self._iface = None
         self._receive_sub = None
         self._connect_sub = None
@@ -69,6 +71,7 @@ class BleSource:
                 on_telemetry=self._on_telemetry,
                 on_nodeinfo=self._on_nodeinfo,
                 on_text=self._on_text,
+                on_traceroute=self._on_traceroute,
                 source_tag="ble",
             )
 

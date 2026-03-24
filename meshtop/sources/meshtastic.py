@@ -46,10 +46,17 @@ class TextMessage:
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
+@dataclass
+class TraceRoute:
+    from_id: str = ""
+    route: list[str] = field(default_factory=list)  # intermediate hop node IDs
+
+
 PositionCallback = Callable[[Position], None]
 TelemetryCallback = Callable[[DeviceMetrics], None]
 NodeInfoCallback = Callable[[NodeInfo], None]
 TextCallback = Callable[[TextMessage], None]
+TraceRouteCallback = Callable[[TraceRoute], None]
 MqttStatusCallback = Callable[[bool], None]
 
 

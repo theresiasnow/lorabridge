@@ -13,7 +13,7 @@ from typing import Any
 from loguru import logger
 
 from meshtop.position import Position
-from meshtop.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage
+from meshtop.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage, TraceRoute
 
 
 def fire_initial_nodes(
@@ -91,6 +91,7 @@ def decode_packet(
     on_telemetry: Callable | None,
     on_nodeinfo: Callable | None,
     on_text: Callable | None,
+    on_traceroute: Callable | None = None,
     node_filter: str = "",
     source_tag: str = "",
 ) -> None:
@@ -115,6 +116,8 @@ def decode_packet(
             _node(decoded.get("user", {}), from_id, on_nodeinfo)
         elif portnum == "TEXT_MESSAGE_APP" and on_text:
             _txt(decoded, packet, from_id, on_text)
+        elif portnum == "TRACEROUTE_APP" and on_traceroute:
+            _trace(decoded, from_id, on_traceroute, source_tag)
     except Exception as e:
         logger.debug(f"[{source_tag}] decode error portnum={portnum}: {e}")
 
@@ -159,6 +162,14 @@ def _node(user: dict, from_id: str, cb: Callable) -> None:
         long_name=user.get("longName", ""),
         short_name=user.get("shortName", ""),
     ))
+
+
+def _trace(decoded: dict, from_id: str, cb: Callable, tag: str) -> None:
+    route_ints = decoded.get("routeDiscovery", {}).get("route", [])
+    route = [_nid(n) for n in route_ints]
+    hops = " → ".join(route) if route else "(direct)"
+    logger.info(f"[{tag}] TRACE from {from_id}: {hops}")
+    cb(TraceRoute(from_id=from_id, route=route))
 
 
 def _txt(decoded: dict, packet: dict, from_id: str, cb: Callable) -> None:

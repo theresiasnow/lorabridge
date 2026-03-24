@@ -19,7 +19,7 @@ from textual.suggester import Suggester
 from textual.widgets import Header, Input, Label, ListItem, ListView, RichLog, Static
 
 from meshtop.position import Position
-from meshtop.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage
+from meshtop.sources.meshtastic import DeviceMetrics, NodeInfo, TextMessage, TraceRoute
 
 if TYPE_CHECKING:
     from meshtop.config import Config
@@ -433,7 +433,8 @@ class CommandSuggester(Suggester):
         "beacon": ["on", "off"],
         "ble": ["on", "off"],
         "serial": ["on", "off"],
-        "pos": [],
+        "pos": ["send"],
+        "trace": ["<NODE_ID>"],
         "node": [],
         "log": [],
         "help": [],
@@ -532,6 +533,11 @@ class MeshtopApp(App[None]):
     class BeaconSent(Message):
         pass
 
+    class TraceRouteReceived(Message):
+        def __init__(self, t: TraceRoute) -> None:
+            super().__init__()
+            self.t = t
+
     def __init__(
         self,
         cfg: Config,
@@ -559,6 +565,7 @@ class MeshtopApp(App[None]):
         # Set from cli.py after construction: (source_type, device) -> error_str | None
         self._on_connect: Callable[[str, str], str | None] | None = None
         self._on_disconnect: Callable[[], None] | None = None
+        self._get_iface: Callable | None = None  # returns live BLE/serial iface or None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -651,6 +658,9 @@ class MeshtopApp(App[None]):
     def on_beacon_sent(self) -> None:
         self.post_message(MeshtopApp.BeaconSent())
 
+    def on_traceroute(self, t: TraceRoute) -> None:
+        self.post_message(MeshtopApp.TraceRouteReceived(t))
+
     # ── Message handlers (run on the event loop) ──────────────────────────────
 
     def on_meshtop_app_position_received(self, msg: PositionReceived) -> None:
@@ -670,6 +680,14 @@ class MeshtopApp(App[None]):
 
     def on_meshtop_app_beacon_sent(self, msg: BeaconSent) -> None:
         self._inc_beacon()
+
+    def on_meshtop_app_trace_route_received(self, msg: TraceRouteReceived) -> None:
+        t = msg.t
+        hops = " → ".join(t.route) if t.route else "(direct)"
+        ts = datetime.now(UTC).strftime("%H:%M:%S")
+        self.query_one("#event-log", RichLog).write(
+            f"[dim]{ts}[/]  [magenta]TRACE[/]  from {t.from_id}: {hops}"
+        )
 
     # ── Main-thread handlers ──────────────────────────────────────────────────
 
@@ -738,7 +756,8 @@ class MeshtopApp(App[None]):
             "beacon": self._cmd_beacon,
             "ble": self._cmd_ble,
             "serial": self._cmd_serial,
-            "pos": lambda _: self._cmd_pos(),
+            "pos": self._cmd_pos,
+            "trace": self._cmd_trace,
             "node": lambda _: self._cmd_node(),
             "log": lambda _: self._cmd_log(),
             "help": lambda _: self._cmd_help(),
@@ -756,12 +775,15 @@ class MeshtopApp(App[None]):
             self.notify("Usage: msg <NODE_ID|^all> <text>", severity="warning")
             return
         dest, text = args[0], " ".join(args[1:])
+        iface = self._get_iface() if self._get_iface else None
 
         def _send() -> None:
             try:
                 from meshtop.mesh_sender import send_text
 
-                result = send_text(self._cfg.source.lora, self._serial_port, dest, text)
+                result = send_text(
+                    self._cfg.source.lora, self._serial_port, dest, text, iface=iface
+                )
                 ts = datetime.now(UTC).strftime("%H:%M:%S")
                 self.call_from_thread(
                     self.query_one("#msg-log", RichLog).write,
@@ -798,7 +820,28 @@ class MeshtopApp(App[None]):
         else:
             self.notify("Usage: beacon [on|off]", severity="warning")
 
-    def _cmd_pos(self) -> None:
+    def _cmd_pos(self, args: list[str]) -> None:
+        if args and args[0].lower() == "send":
+            pos = self._last_pos
+            if pos is None:
+                self.notify("No position data yet", severity="warning")
+                return
+            iface = self._get_iface() if self._get_iface else None
+            if iface is None:
+                self.notify("No live connection — cannot send position", severity="warning")
+                return
+
+            def _send() -> None:
+                try:
+                    from meshtop.mesh_sender import send_position
+                    send_position(iface, pos.lat, pos.lon, pos.alt)
+                    self.call_from_thread(self.notify, "Position broadcast sent", "Position")
+                except Exception as e:
+                    self.call_from_thread(self.notify, str(e), "Send failed", "error")
+
+            threading.Thread(target=_send, daemon=True).start()
+            self.notify("Broadcasting position…")
+            return
         pos = self._last_pos
         if pos is None:
             self.notify("No position data yet", severity="warning")
@@ -817,6 +860,29 @@ class MeshtopApp(App[None]):
             return
         lines = [f"{n.long_name} ({n.short_name})  {nid}" for nid, n in self._mesh_nodes.items()]
         self.notify("\n".join(lines), title=f"Nodes ({len(self._mesh_nodes)})", timeout=8)
+
+    def _cmd_trace(self, args: list[str]) -> None:
+        if not args:
+            self.notify("Usage: trace <NODE_ID>  (e.g. trace !7a78e5e3)", severity="warning")
+            return
+        dest = args[0]
+        if not dest.startswith("!"):
+            dest = f"!{dest}"
+        iface = self._get_iface() if self._get_iface else None
+        if iface is None:
+            self.notify("No live connection — cannot send traceroute", severity="warning")
+            return
+
+        def _send() -> None:
+            try:
+                from meshtop.mesh_sender import send_traceroute
+                send_traceroute(iface, dest)
+                self.call_from_thread(self.notify, f"Traceroute sent to {dest}", "Trace")
+            except Exception as e:
+                self.call_from_thread(self.notify, str(e), "Trace failed", "error")
+
+        threading.Thread(target=_send, daemon=True).start()
+        self.notify(f"Sending traceroute to {dest}…")
 
     def _cmd_ble(self, args: list[str]) -> None:
         action = args[0].lower() if args else "on"
@@ -901,6 +967,8 @@ class MeshtopApp(App[None]):
             "send  (alias for msg)",
             "beacon on|off  —  toggle APRS beaconing",
             "pos  —  show current position",
+            "pos send  —  broadcast position to mesh",
+            "trace <NODE_ID>  —  send traceroute request",
             "node  —  list heard nodes",
             "log  —  view log file",
             "help  —  this message",

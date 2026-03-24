@@ -43,7 +43,8 @@ def _friendly_error(exc: Exception) -> str:
     return f"{type(exc).__name__}: {msg}"
 
 
-def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status):
+def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status,
+                  on_traceroute=None):
     """Instantiate and return the configured source (lora/serial/ble)."""
     src_type = cfg.source.type
 
@@ -65,6 +66,7 @@ def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_statu
             on_nodeinfo=on_nodeinfo,
             on_text=on_text,
             on_status=on_status,
+            on_traceroute=on_traceroute,
         )
     if src_type == "ble":
         from meshtop.sources.ble import BleSource
@@ -75,6 +77,7 @@ def _build_source(cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_statu
             on_nodeinfo=on_nodeinfo,
             on_text=on_text,
             on_status=on_status,
+            on_traceroute=on_traceroute,
         )
     raise ValueError(f"Unknown source type: {src_type}")
 
@@ -181,6 +184,9 @@ def main(
         def on_text(m: TextMessage) -> None:
             tui_app.on_text(m)
 
+        def on_traceroute(t) -> None:
+            tui_app.on_traceroute(t)
+
         def on_status(connected: bool) -> None:
             tui_app.on_mqtt_status(connected)
 
@@ -211,7 +217,8 @@ def main(
             elif source_type == "serial":
                 cfg.source.port = device
             new_src = _build_source(
-                cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status
+                cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status,
+                on_traceroute=on_traceroute,
             )
             try:
                 new_src.start()
@@ -234,6 +241,7 @@ def main(
 
         tui_app._on_connect = on_connect  # type: ignore[attr-defined]
         tui_app._on_disconnect = on_disconnect  # type: ignore[attr-defined]
+        tui_app._get_iface = lambda: getattr(src_ref[0], "_iface", None) if src_ref[0] else None  # type: ignore[attr-defined]
 
         # MQTT node observer — runs always in the background to collect node info
         # from the broader mesh, regardless of whether primary source is BLE/serial/lora.
@@ -254,7 +262,8 @@ def main(
 
         if cfg.source.type != "none":
             src_ref[0] = _build_source(
-                cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status
+                cfg, on_position, on_telemetry, on_nodeinfo, on_text, on_status,
+                on_traceroute=on_traceroute,
             )
 
             def _connect_source() -> None:
