@@ -66,5 +66,34 @@ uv run meshtop --no-tui --debug       # plain console output with debug logging
 
 Up/down arrows in the command bar navigate command history.
 
+## Configuration
 
-<!-- Triggering workflow with this comment -->
+meshtop reads `meshtop.toml` from the current directory (or pass `--config <path>`). Copy `meshtop.example.toml` as a starting point.
+
+### Encryption keys (PSK)
+
+Keys are base64-encoded and set in the TOML file or via the `channel` command in the TUI.
+
+| Value | Meaning |
+|---|---|
+| `AQ==` | Meshtastic default 128-bit key (1-byte shorthand, same as the default in the app) |
+| 16-byte base64 | AES-128 custom key (e.g. `6h/2yRlqjfzqGza/0C0SgQ==`) |
+| 32-byte base64 | AES-256 custom key |
+| *(empty)* | No encryption |
+
+The primary channel (index 0) uses `primary_key` in `[source.lora]`. Named secondary channels each have their own `key` under `[source.lora.channels.NAME]`.
+
+```toml
+[source.lora]
+primary_key = "AQ=="               # default Meshtastic key
+
+[source.lora.channels.TSS]
+enabled   = true
+encrypted = true
+key       = "6h/2yRlqjfzqGza/0C0SgQ=="   # 16-byte AES-128
+```
+
+To generate a random AES-128 key:
+```
+python -c "import os, base64; print(base64.b64encode(os.urandom(16)).decode())"
+```

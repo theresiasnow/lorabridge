@@ -493,7 +493,7 @@ class ChannelConfigScreen(ModalScreen):
                                        classes="ch-col-enc")
                         yield Input(
                             value=ch.key, id=f"key-{name}", classes="ch-col-key",
-                            placeholder="base64 PSK",
+                            placeholder="base64 PSK  (AQ== default · 16B AES-128 · 32B AES-256)",
                         )
             yield Label("Ctrl+S save  •  Esc cancel", id="ch-hint")
 
