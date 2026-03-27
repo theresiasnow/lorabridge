@@ -19,7 +19,7 @@ meshtop/
     meshtastic.py    — MQTT source (MeshtasticSource) — decrypts + decodes ServiceEnvelope
     serial.py        — USB-serial NMEA source (pyserial + pynmea2)
     ble.py           — BLE source (bleak + meshtastic BLEInterface)
-    wifi.py          — WiFi/TCP source (meshtastic TCPInterface)
+    tcp.py           — TCP source (meshtastic TCPInterface)
     _mesh_decode.py  — Shared decoder for BLE/serial dict packets
   sinks/
     nmea_server.py   — TCP NMEA server (pi-star / NMEA consumers, port 10110)

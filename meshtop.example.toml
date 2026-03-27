@@ -11,7 +11,7 @@ password = "large4cats"
 topic    = "msh/EU_868/SE/#"
 node_id  = "!7a78e5e3"     # filter to own node only
 primary_key = "AQ=="       # primary channel (index 0) PSK — AQ== = Meshtastic default 128-bit key
-device_host = ""           # optional: WiFi node IP for sending (e.g. "192.168.1.100"); leave blank if using BLE/serial
+device_host = ""           # optional: TCP node IP for sending (e.g. "192.168.1.100"); leave blank if using BLE/serial
 
 [source.lora.channels.LongFast]
 enabled   = true

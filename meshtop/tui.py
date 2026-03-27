@@ -935,7 +935,7 @@ class MeshtopApp(App[None]):
             "beacon": self._cmd_beacon,
             "ble": self._cmd_ble,
             "serial": self._cmd_serial,
-            "tcp": self._cmd_wifi,
+            "tcp": self._cmd_tcp,
             "pos": self._cmd_pos,
             "info": self._cmd_info,
             "trace": self._cmd_trace,
@@ -1210,7 +1210,7 @@ class MeshtopApp(App[None]):
 
         self.push_screen(SerialPickerScreen(), _on_pick)
 
-    def _cmd_wifi(self, args: list[str]) -> None:
+    def _cmd_tcp(self, args: list[str]) -> None:
         action = args[0] if args else ""
         if action.lower() == "off":
             self._cfg.source.lora.device_host = ""

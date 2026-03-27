@@ -1,4 +1,4 @@
-"""Meshtastic WiFi/TCP source (direct device connection over network)."""
+"""Meshtastic TCP source (direct device connection over network)."""
 
 from __future__ import annotations
 
