@@ -210,9 +210,9 @@ class SinksPanel(Static):
             txt.append("\n")
 
         _SRC_LABELS = {"lora": "MQTT", "serial": "USB serial", "ble": "Bluetooth"}
-        _SRC_KINDS  = {"lora": "mqtt",  "serial": "usb",        "ble": "ble"}
+        _SRC_KINDS = {"lora": "mqtt", "serial": "usb", "ble": "ble"}
         src_label = _SRC_LABELS.get(src_type, src_type.upper())
-        src_kind  = _SRC_KINDS.get(src_type, src_type)
+        src_kind = _SRC_KINDS.get(src_type, src_type)
         src_status = "receiving" if src_connected else "connecting"
         row(src_connected, src_label, src_kind, src_status, f"  {src_detail}")
 
@@ -228,8 +228,13 @@ class SinksPanel(Static):
 
         if nmea is not None:
             nc = nmea.client_count
-            row(True, "NMEA srv", "tcp", "listening",
-                f"  {nc} client{'s' if nc != 1 else ''}  :10110")
+            row(
+                True,
+                "NMEA srv",
+                "tcp",
+                "listening",
+                f"  {nc} client{'s' if nc != 1 else ''}  :10110",
+            )
 
         if gpsd is not None:
             nc = gpsd.client_count
@@ -237,8 +242,9 @@ class SinksPanel(Static):
 
         if rigtop is not None:
             nc = rigtop._server.client_count
-            row(True, "rigtop", "tcp", "listening",
-                f"  {nc} client{'s' if nc != 1 else ''}  :10111")
+            row(
+                True, "rigtop", "tcp", "listening", f"  {nc} client{'s' if nc != 1 else ''}  :10111"
+            )
 
         self.update(txt)
 
@@ -286,6 +292,7 @@ class BlePickerScreen(ModalScreen):
         status.update("Scanning for Meshtastic devices… (5 s)")
         try:
             from meshtastic.ble_interface import BLEInterface
+
             loop = asyncio.get_event_loop()
             devices = await loop.run_in_executor(None, BLEInterface.scan)
         except Exception as e:
@@ -354,6 +361,7 @@ class SerialPickerScreen(ModalScreen):
     def _populate(self) -> None:
         try:
             from serial.tools.list_ports import comports
+
             ports = sorted(comports(), key=lambda p: p.device)
         except Exception as e:
             self.query_one("#serial-status", Label).update(f"[red]Error:[/] {e}")
@@ -419,6 +427,7 @@ class LogScreen(ModalScreen):
 
     def _load(self) -> None:
         from pathlib import Path
+
         view = self.query_one("#log-view", RichLog)
         view.clear()
         log_path = Path("meshtop.log")
@@ -487,12 +496,14 @@ class ChannelConfigScreen(ModalScreen):
                 for name, ch in self._channels.items():
                     with Horizontal(classes="ch-row"):
                         yield Label(name, classes="ch-name")
-                        yield Checkbox("", value=ch.enabled, id=f"en-{name}",
-                                       classes="ch-col-en")
-                        yield Checkbox("", value=ch.encrypted, id=f"enc-{name}",
-                                       classes="ch-col-enc")
+                        yield Checkbox("", value=ch.enabled, id=f"en-{name}", classes="ch-col-en")
+                        yield Checkbox(
+                            "", value=ch.encrypted, id=f"enc-{name}", classes="ch-col-enc"
+                        )
                         yield Input(
-                            value=ch.key, id=f"key-{name}", classes="ch-col-key",
+                            value=ch.key,
+                            id=f"key-{name}",
+                            classes="ch-col-key",
                             placeholder="base64 PSK  (AQ== default · 16B AES-128 · 32B AES-256)",
                         )
             yield Label("Ctrl+S save  •  Esc cancel", id="ch-hint")
@@ -531,8 +542,8 @@ class HistoryInput(Input):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._history: list[str] = []
-        self._history_pos: int = -1   # -1 = not browsing
-        self._history_draft: str = "" # saved current draft while browsing
+        self._history_pos: int = -1  # -1 = not browsing
+        self._history_draft: str = ""  # saved current draft while browsing
 
     def push_history(self, entry: str) -> None:
         """Add a command to history (deduplicates consecutive identical entries)."""
@@ -576,7 +587,7 @@ class CommandSuggester(Suggester):
         "beacon": ["on", "off"],
         "ble": ["on", "off"],
         "serial": ["on", "off"],
-        "wifi": ["<HOST>", "off"],
+        "tcp": ["<HOST>", "off"],
         "pos": ["send <NODE_ID>"],
         "info": ["<NODE_ID>"],
         "trace": ["<NODE_ID>"],
@@ -729,7 +740,7 @@ class MeshtopApp(App[None]):
         with Horizontal(id="cmd-bar"):
             yield Label("❯ ", id="cmd-prompt")
             yield HistoryInput(
-                placeholder="ble  •  serial  •  wifi <HOST>  •  channel  •  msg <NODE> <text>",
+                placeholder="ble  •  serial  •  tcp <HOST>  •  channel  •  msg <NODE> <text>",
                 id="cmd-input",
                 suggester=CommandSuggester(),
             )
@@ -917,8 +928,9 @@ class MeshtopApp(App[None]):
         if raw.startswith("! "):
             text = raw[2:].strip()
             if not self._last_msg_dest:
-                self.notify("No previous msg recipient — use msg <NODE> <text> first",
-                            severity="warning")
+                self.notify(
+                    "No previous msg recipient — use msg <NODE> <text> first", severity="warning"
+                )
                 return
             if not text:
                 self.notify("Usage: ! <text>", severity="warning")
@@ -935,7 +947,7 @@ class MeshtopApp(App[None]):
             "beacon": self._cmd_beacon,
             "ble": self._cmd_ble,
             "serial": self._cmd_serial,
-            "wifi": self._cmd_wifi,
+            "tcp": self._cmd_tcp,
             "pos": self._cmd_pos,
             "info": self._cmd_info,
             "trace": self._cmd_trace,
@@ -969,8 +981,9 @@ class MeshtopApp(App[None]):
         if full in self._mesh_nodes:
             return full
         # Short name match (e.g. "TSSV")
-        by_name = [nid for nid, n in self._mesh_nodes.items()
-                   if n.short_name.lower() == token.lower()]
+        by_name = [
+            nid for nid, n in self._mesh_nodes.items() if n.short_name.lower() == token.lower()
+        ]
         if len(by_name) == 1:
             nid = by_name[0]
             self.notify(f"{token} → {nid}", title="Node", timeout=3)
@@ -983,9 +996,7 @@ class MeshtopApp(App[None]):
             return by_suffix[0]
         if len(by_name) > 1 or len(by_suffix) > 1:
             hits = by_name or by_suffix
-            self.notify(
-                f"Ambiguous: {', '.join(hits)}  — use full ID", severity="warning"
-            )
+            self.notify(f"Ambiguous: {', '.join(hits)}  — use full ID", severity="warning")
         return full
 
     def _cmd_msg(self, args: list[str]) -> None:
@@ -1018,8 +1029,12 @@ class MeshtopApp(App[None]):
                 from meshtop.mesh_sender import send_text
 
                 send_text(
-                    self._cfg.source.lora, self._serial_port, dest, text,
-                    iface=iface, channel_index=channel_index,
+                    self._cfg.source.lora,
+                    self._serial_port,
+                    dest,
+                    text,
+                    iface=iface,
+                    channel_index=channel_index,
                 )
             except Exception as e:
                 self.call_from_thread(self.notify, str(e), "Send failed", "error")
@@ -1068,6 +1083,7 @@ class MeshtopApp(App[None]):
             def _send() -> None:
                 try:
                     from meshtop.mesh_sender import send_position
+
                     send_position(iface, pos.lat, pos.lon, pos.alt, dest=dest)
                     self.call_from_thread(self.notify, f"Position sent to {dest}", "Position")
                 except Exception as e:
@@ -1082,8 +1098,7 @@ class MeshtopApp(App[None]):
             return
         fix = "fix" if pos.fix else "no fix"
         self.notify(
-            f"lat={pos.lat:.6f}  lon={pos.lon:.6f}  alt={pos.alt:.0f}m  "
-            f"sats={pos.sats}  {fix}",
+            f"lat={pos.lat:.6f}  lon={pos.lon:.6f}  alt={pos.alt:.0f}m  sats={pos.sats}  {fix}",
             title="Position",
             timeout=6,
         )
@@ -1092,10 +1107,7 @@ class MeshtopApp(App[None]):
         if not self._mesh_nodes:
             self.notify("No nodes heard yet", severity="warning")
             return
-        lines = [
-            f"{n.short_name:<6}  {nid}  {n.long_name}"
-            for nid, n in self._mesh_nodes.items()
-        ]
+        lines = [f"{n.short_name:<6}  {nid}  {n.long_name}" for nid, n in self._mesh_nodes.items()]
         self.notify("\n".join(lines), title=f"Nodes ({len(self._mesh_nodes)})", timeout=8)
 
     def _cmd_trace(self, args: list[str]) -> None:
@@ -1111,6 +1123,7 @@ class MeshtopApp(App[None]):
         def _send() -> None:
             try:
                 from meshtop.mesh_sender import send_traceroute
+
                 send_traceroute(iface, dest)
                 self.call_from_thread(self.notify, f"Traceroute sent to {dest}", "Trace")
             except Exception as e:
@@ -1132,6 +1145,7 @@ class MeshtopApp(App[None]):
         def _send() -> None:
             try:
                 from meshtop.mesh_sender import send_user_info
+
                 send_user_info(iface, dest)
                 self.call_from_thread(self.notify, f"User info sent to {dest}", "Info")
             except Exception as e:
@@ -1146,11 +1160,14 @@ class MeshtopApp(App[None]):
             if self._on_disconnect is None:
                 self.notify("Not connected", severity="warning")
                 return
+
             def _do_off() -> None:
                 self._on_disconnect()
                 self.call_from_thread(lambda: self.notify("Bluetooth disconnected", title="BLE"))
+
             threading.Thread(target=_do_off, daemon=True).start()
             return
+
         # on / no arg → picker
         def _on_pick(addr: str | None) -> None:
             if addr is None:
@@ -1167,9 +1184,7 @@ class MeshtopApp(App[None]):
                         lambda: self.notify(err, title="BLE connect failed", severity="error")
                     )
                 else:
-                    self.call_from_thread(
-                        lambda: self.notify(f"Connected to {addr}", title="BLE")
-                    )
+                    self.call_from_thread(lambda: self.notify(f"Connected to {addr}", title="BLE"))
 
             threading.Thread(target=_do, daemon=True).start()
 
@@ -1181,11 +1196,14 @@ class MeshtopApp(App[None]):
             if self._on_disconnect is None:
                 self.notify("Not connected", severity="warning")
                 return
+
             def _do_off() -> None:
                 self._on_disconnect()
                 self.call_from_thread(lambda: self.notify("Serial disconnected", title="Serial"))
+
             threading.Thread(target=_do_off, daemon=True).start()
             return
+
         # on / no arg → picker
         def _on_pick(port: str | None) -> None:
             if port is None:
@@ -1210,23 +1228,23 @@ class MeshtopApp(App[None]):
 
         self.push_screen(SerialPickerScreen(), _on_pick)
 
-    def _cmd_wifi(self, args: list[str]) -> None:
+    def _cmd_tcp(self, args: list[str]) -> None:
         action = args[0] if args else ""
         if action.lower() == "off":
             self._cfg.source.lora.device_host = ""
             if self._cfg.source.type == "tcp" and self._on_disconnect:
+
                 def _do_off() -> None:
                     self._on_disconnect()
-                    self.call_from_thread(
-                        lambda: self.notify("WiFi/TCP disconnected", title="WiFi")
-                    )
+                    self.call_from_thread(lambda: self.notify("TCP disconnected", title="TCP"))
+
                 threading.Thread(target=_do_off, daemon=True).start()
             else:
-                self.notify("Send via WiFi cleared", title="WiFi")
+                self.notify("TCP host cleared", title="TCP")
             return
         host = action if action else ""
         if not host:
-            self.notify("Usage: wifi <HOST|IP>  (e.g. wifi 192.168.1.100)", severity="warning")
+            self.notify("Usage: tcp <HOST|IP>  (e.g. tcp 192.168.1.100)", severity="warning")
             return
 
         # Always update device_host so send_text can reach the node.
@@ -1234,25 +1252,23 @@ class MeshtopApp(App[None]):
 
         # On MQTT source: keep receiving via MQTT, just enable sending via TCP.
         if self._cfg.source.type == "lora":
-            self.notify(f"Send via {host} (MQTT receive unchanged)", title="WiFi")
+            self.notify(f"Send via {host} (MQTT receive unchanged)", title="TCP")
             return
 
         # On other sources: connect as TCP source too.
         if self._on_connect is None:
-            self.notify(f"Send via {host}", title="WiFi")
+            self.notify(f"Send via {host}", title="TCP")
             return
-        self.notify(f"Connecting to {host}…", title="WiFi", timeout=30)
+        self.notify(f"Connecting to {host}…", title="TCP", timeout=30)
 
         def _do() -> None:
             err = self._on_connect("tcp", host)
             if err:
                 self.call_from_thread(
-                    lambda: self.notify(err, title="WiFi connect failed", severity="error")
+                    lambda: self.notify(err, title="TCP connect failed", severity="error")
                 )
             else:
-                self.call_from_thread(
-                    lambda: self.notify(f"Connected to {host}", title="WiFi")
-                )
+                self.call_from_thread(lambda: self.notify(f"Connected to {host}", title="TCP"))
 
         threading.Thread(target=_do, daemon=True).start()
 
@@ -1278,8 +1294,8 @@ class MeshtopApp(App[None]):
             "ble off  —  disconnect Bluetooth",
             "serial on  —  pick and connect via USB serial",
             "serial off  —  disconnect serial",
-            "wifi <HOST>  —  connect via WiFi/TCP (e.g. wifi 192.168.1.100)",
-            "wifi off  —  disconnect WiFi/TCP",
+            "tcp <HOST>  —  connect via TCP (e.g. tcp 192.168.1.100)",
+            "tcp off  —  disconnect TCP",
             "msg [#<ch>] <NODE_ID|^all> <text>  —  send message (#0 primary, #1 secondary, …)",
             "send  (alias for msg)",
             "beacon on|off  —  toggle APRS beaconing",

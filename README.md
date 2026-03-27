@@ -51,8 +51,8 @@ uv run meshtop --no-tui --debug       # plain console output with debug logging
 | `ble off` | Disconnect BLE |
 | `serial on` | Pick a serial port and connect |
 | `serial off` | Disconnect serial |
-| `wifi <HOST>` | Set WiFi/TCP node for sending (e.g. `wifi 192.168.1.100`); on MQTT source keeps receiving via MQTT |
-| `wifi off` | Clear WiFi/TCP send target |
+| `tcp <HOST>` | Set TCP node for sending (e.g. `tcp 192.168.1.100`); on MQTT source keeps receiving via MQTT |
+| `tcp off` | Clear TCP send target |
 | `beacon on/off` | Enable or disable APRS beacon |
 | `msg [#<ch>] <NODE\|^all> <text>` | Send a text message — node can be short name, hex suffix or full ID; `#1` selects secondary channel |
 | `! <text>` | Send to last `msg` recipient (shortcut) |

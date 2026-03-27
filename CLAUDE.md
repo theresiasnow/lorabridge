@@ -1,18 +1,5 @@
 # meshtop — Claude Code instructions
 
-## Python / tooling
-
-This project uses **uv** for all Python tasks. Always prefer:
-
-```
-uv run python       # instead of python / .venv/Scripts/python.exe
-uv run pytest       # instead of python -m pytest
-uv run ruff         # instead of python -m ruff
-uv run pylint       # instead of python -m pylint
-```
-
-Never call `.venv/Scripts/python.exe` directly.
-
 ## Project layout
 
 ```
@@ -24,8 +11,10 @@ meshtop/
   position.py      # Position dataclass (lat, lon, alt, speed, course, fix)
   sources/
     __init__.py
-    serial.py      # USB-serial NMEA (Meshtastic device, pyserial + pynmea2)
-    lora.py        # LoRa-gateway via MQTT (TTN v3 / Chirpstack, paho-mqtt)
+    serial.py      # USB-serial (Meshtastic device, pyserial)
+    tcp.py         # TCP source (Meshtastic TCPInterface)
+    ble.py         # BLE source (bleak + meshtastic BLEInterface)
+    lora.py        # LoRa-gateway via MQTT (paho-mqtt)
   sinks/
     __init__.py
     nmea_server.py # TCP NMEA server for pi-star (default port 10110)
@@ -37,12 +26,6 @@ tests/
   test_nmea.py
 ```
 
-## Code style
-
-- Line length: 100
-- Linter: ruff (select E, F, W, I, UP, B, SIM, RUF, PTH, PIE, TRY, G, C4, PERF)
-- No docstrings or type annotations required on code you didn't write
-
 ## Key conventions
 
 - Config is loaded once in `cli.main()` — pass values down, don't re-read TOML at runtime
@@ -50,35 +33,12 @@ tests/
 - All sinks run as background threads; main thread owns the source loop
 - `position.py` is the shared data contract — no sink/source imports the other
 
-## Commit messages
-
-All commits must follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-type(scope)?: short description
-```
-
-Valid types: `build`, `bump`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`
-
 ## Running
 
 ```
 uv run meshtop --help
 uv run meshtop --source serial --port COM3
-uv run meshtop --source lora --config meshtop.toml
+uv run meshtop --source tcp --config meshtop.toml
 uv run pytest tests/
 uv run ruff check meshtop/
 ```
-
-## Branch workflow
-
-Same as rigtop — `feat/*` / `fix/*`, never commit directly to main.
-
-## Pull requests
-
-When creating a PR:
-
-1. Push the branch and create the PR with `gh pr create`
-2. Always assign **Copilot** as a reviewer: `gh pr edit <number> --add-reviewer copilot`
-3. After creating the PR, wait for Copilot's review comments: `gh pr checks <number> --watch`
-4. Read review comments with `gh pr view <number> --comments` and address any issues before merging
