@@ -1,3 +1,9 @@
+## v0.6.0 (2026-03-27)
+
+### Feat
+
+- **tui**: add SNR, hops, battery and last-heard to nodes panel (#12)
+
 ## v0.5.0 (2026-03-27)
 
 ### Feat
