@@ -1,3 +1,9 @@
+## v0.4.1 (2026-03-27)
+
+### Fix
+
+- **tui**: rename wifi command to tcp (#10)
+
 ## v0.4.0 (2026-03-24)
 
 ### Feat

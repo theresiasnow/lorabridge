@@ -1,6 +1,6 @@
 [project]
 name = "meshtop"
-version = "0.4.0"
+version = "0.4.1"
 description = "GPS bridge for Meshtastic devices — forwards to pi-star, APRS-IS, gpsd, rigtop"
 readme = "README.md"
 requires-python = ">=3.12"
