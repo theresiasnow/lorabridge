@@ -128,35 +128,6 @@ class TelemetryPanel(Static):
         self.update(txt)
 
 
-class NodePanel(Static):
-    DEFAULT_CSS = (
-        "NodePanel { border: round $surface; padding: 0 1; height: 100%; overflow-y: auto; }"
-    )
-
-    def on_mount(self) -> None:
-        self.border_title = "Node"
-        self.render_data(None)
-
-    def render_data(self, n: NodeInfo | None) -> None:
-        COL, M = 7, " "
-        txt = Text()
-
-        def lbl(text: str) -> None:
-            txt.append(f"{M}{text:<{COL - 1}} ", style="dim")
-
-        if n is None:
-            txt.append(f"{M}—\n", style="dim")
-        else:
-            lbl("Name")
-            txt.append(f"{n.long_name}\n", style="bold cyan")
-            lbl("Short")
-            txt.append(f"{n.short_name}\n", style="cyan")
-            lbl("ID")
-            txt.append(f"{n.node_id}\n", style="dim")
-
-        self.update(txt)
-
-
 class NodesPanel(Static):
     DEFAULT_CSS = (
         "NodesPanel { border: round $surface; padding: 0 1; height: 6; overflow-y: auto; }"
@@ -658,9 +629,8 @@ class MeshtopApp(App[None]):
     CSS = """
     Screen { layout: vertical; overflow: hidden hidden; }
     #top-row { height: 12; }
-    PositionPanel { width: 2fr; }
-    TelemetryPanel { width: 2fr; }
-    NodePanel { width: 1fr; }
+    PositionPanel { width: 1fr; }
+    TelemetryPanel { width: 1fr; }
     #event-log { height: 1fr; border: round $surface; }
     #msg-log   { height: 12;  border: round yellow; }
     #cmd-bar {
@@ -744,6 +714,8 @@ class MeshtopApp(App[None]):
         self._last_pos: Position | None = None
         self._last_node: NodeInfo | None = None
         self._local_node_id: str = ""  # set by cli._drain after connect
+        self._local_node_long: str = ""
+        self._local_node_short: str = ""
         # node_id -> NodeInfo, insertion order = heard order
         self._mesh_nodes: dict[str, NodeInfo] = {}
         # Set from cli.py after construction: (source_type, device) -> error_str | None
@@ -759,7 +731,6 @@ class MeshtopApp(App[None]):
         with Horizontal(id="top-row"):
             yield PositionPanel(id="pos-panel")
             yield TelemetryPanel(id="tel-panel")
-            yield NodePanel(id="node-panel")
         yield SinksPanel(id="sinks-panel")
         yield NodesPanel(id="nodes-panel")
         yield RichLog(id="event-log", highlight=True, markup=True)
@@ -785,7 +756,6 @@ class MeshtopApp(App[None]):
         event_log.tooltip = "Node events, telemetry, traceroute results"
         self.query_one("#pos-panel").tooltip = "GPS position from connected device"
         self.query_one("#tel-panel").tooltip = "Device telemetry (battery, voltage, uptime)"
-        self.query_one("#node-panel").tooltip = "Local node identity"
         self.query_one("#sinks-panel").tooltip = "Active output sinks (APRS, NMEA, gpsd, rigtop)"
         self.query_one("#nodes-panel").tooltip = "Mesh nodes heard via BLE/serial/MQTT"
         cmd = self.query_one("#cmd-input", HistoryInput)
@@ -933,7 +903,9 @@ class MeshtopApp(App[None]):
                 n.voltage = existing.voltage
         self._mesh_nodes[n.node_id] = n
         if not self._local_node_id or n.node_id == self._local_node_id:
-            self.query_one("#node-panel", NodePanel).render_data(n)
+            self._local_node_long = n.long_name
+            self._local_node_short = n.short_name
+            self._update_subtitle()
         self.query_one("#nodes-panel", NodesPanel).render_data(self._mesh_nodes)
         ts = datetime.now(UTC).strftime("%H:%M:%S")
         self.query_one("#event-log", RichLog).write(
@@ -962,7 +934,14 @@ class MeshtopApp(App[None]):
     def _update_subtitle(self) -> None:
         _mode_map = {"lora": "MQTT", "serial": "USB", "ble": "BLE", "none": "—"}
         _mode = _mode_map.get(self._cfg.source.type, self._cfg.source.type.upper())
-        self.sub_title = f"{self._cfg.aprs.callsign}  [{_mode}]"
+        base = f"{self._cfg.aprs.callsign}  [{_mode}]"
+        if self._local_node_long:
+            tail = self._local_node_id[-4:] if self._local_node_id else ""
+            short = self._local_node_short or tail
+            node_part = f"{self._local_node_long}  ({short})" if short else self._local_node_long
+            self.sub_title = f"{base}  •  {node_part}"
+        else:
+            self.sub_title = base
 
     def _set_src_connected(self, connected: bool) -> None:
         self._src_connected = connected
