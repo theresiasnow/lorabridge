@@ -11,5 +11,6 @@ meshtop.toml
 *.jsonl
 *.bin
 test_*.py
-.claude/
+.claude/*
+!.claude/settings.json
 err.txt
