@@ -22,6 +22,8 @@ jobs:
     # Skip the bump commit itself to avoid an infinite loop.
     # commitizen always prefixes bump commits with "bump:".
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    outputs:
+      tag: ${{ steps.bump.outputs.tag }}
 
     permissions:
       contents: write   # push tag + create GitHub release
@@ -38,7 +40,7 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         run: uv python install 3.14
 
       - name: Install dev dependencies
