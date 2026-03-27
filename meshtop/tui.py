@@ -576,7 +576,7 @@ class CommandSuggester(Suggester):
         "beacon": ["on", "off"],
         "ble": ["on", "off"],
         "serial": ["on", "off"],
-        "wifi": ["<HOST>", "off"],
+        "tcp": ["<HOST>", "off"],
         "pos": ["send <NODE_ID>"],
         "info": ["<NODE_ID>"],
         "trace": ["<NODE_ID>"],
@@ -729,7 +729,7 @@ class MeshtopApp(App[None]):
         with Horizontal(id="cmd-bar"):
             yield Label("❯ ", id="cmd-prompt")
             yield HistoryInput(
-                placeholder="ble  •  serial  •  wifi <HOST>  •  channel  •  msg <NODE> <text>",
+                placeholder="ble  •  serial  •  tcp <HOST>  •  channel  •  msg <NODE> <text>",
                 id="cmd-input",
                 suggester=CommandSuggester(),
             )
@@ -935,7 +935,7 @@ class MeshtopApp(App[None]):
             "beacon": self._cmd_beacon,
             "ble": self._cmd_ble,
             "serial": self._cmd_serial,
-            "wifi": self._cmd_wifi,
+            "tcp": self._cmd_wifi,
             "pos": self._cmd_pos,
             "info": self._cmd_info,
             "trace": self._cmd_trace,
@@ -1218,15 +1218,15 @@ class MeshtopApp(App[None]):
                 def _do_off() -> None:
                     self._on_disconnect()
                     self.call_from_thread(
-                        lambda: self.notify("WiFi/TCP disconnected", title="WiFi")
+                        lambda: self.notify("TCP disconnected", title="TCP")
                     )
                 threading.Thread(target=_do_off, daemon=True).start()
             else:
-                self.notify("Send via WiFi cleared", title="WiFi")
+                self.notify("TCP host cleared", title="TCP")
             return
         host = action if action else ""
         if not host:
-            self.notify("Usage: wifi <HOST|IP>  (e.g. wifi 192.168.1.100)", severity="warning")
+            self.notify("Usage: tcp <HOST|IP>  (e.g. tcp 192.168.1.100)", severity="warning")
             return
 
         # Always update device_host so send_text can reach the node.
@@ -1234,24 +1234,24 @@ class MeshtopApp(App[None]):
 
         # On MQTT source: keep receiving via MQTT, just enable sending via TCP.
         if self._cfg.source.type == "lora":
-            self.notify(f"Send via {host} (MQTT receive unchanged)", title="WiFi")
+            self.notify(f"Send via {host} (MQTT receive unchanged)", title="TCP")
             return
 
         # On other sources: connect as TCP source too.
         if self._on_connect is None:
-            self.notify(f"Send via {host}", title="WiFi")
+            self.notify(f"Send via {host}", title="TCP")
             return
-        self.notify(f"Connecting to {host}…", title="WiFi", timeout=30)
+        self.notify(f"Connecting to {host}…", title="TCP", timeout=30)
 
         def _do() -> None:
             err = self._on_connect("tcp", host)
             if err:
                 self.call_from_thread(
-                    lambda: self.notify(err, title="WiFi connect failed", severity="error")
+                    lambda: self.notify(err, title="TCP connect failed", severity="error")
                 )
             else:
                 self.call_from_thread(
-                    lambda: self.notify(f"Connected to {host}", title="WiFi")
+                    lambda: self.notify(f"Connected to {host}", title="TCP")
                 )
 
         threading.Thread(target=_do, daemon=True).start()
@@ -1278,8 +1278,8 @@ class MeshtopApp(App[None]):
             "ble off  —  disconnect Bluetooth",
             "serial on  —  pick and connect via USB serial",
             "serial off  —  disconnect serial",
-            "wifi <HOST>  —  connect via WiFi/TCP (e.g. wifi 192.168.1.100)",
-            "wifi off  —  disconnect WiFi/TCP",
+            "tcp <HOST>  —  connect via TCP (e.g. tcp 192.168.1.100)",
+            "tcp off  —  disconnect TCP",
             "msg [#<ch>] <NODE_ID|^all> <text>  —  send message (#0 primary, #1 secondary, …)",
             "send  (alias for msg)",
             "beacon on|off  —  toggle APRS beaconing",
